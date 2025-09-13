@@ -3,6 +3,11 @@ from tkinter import messagebox
 import math
 import os
 
+# I added a "Clear All" button to the calculator. 
+# This is for a school project, and I'll highlight where I made the changes. In the original file, you had
+# this ---->except Exception as e:<--- where the "e" was flagged as a problem on VSC. In three instances.
+# Lines 85, 106, and 116. The code was change to ---> except Exception: <--- instead..
+
 class Calculator:
     def __init__(self, root):
         self.root = root
@@ -27,20 +32,28 @@ class Calculator:
             ('-->', 3, 0), ('7', 3, 1), ('8', 3, 2), ('9', 3, 3), ('/', 3, 4),
             ('CE', 4, 0), ('4', 4, 1), ('5', 4, 2), ('6', 4, 3), ('*', 4, 4),
             ('AC', 5, 0), ('1', 5, 1), ('2', 5, 2), ('3', 5, 3), ('-', 5, 4),
-            ('0', 6, 0), ('00', 6, 1), ('.', 6, 2), ('=', 6, 3), ('+', 6, 4)
-            
+            ('0', 6, 0), ('00', 6, 1), ('.', 6, 2), ('=', 6, 3), ('+', 6, 4),
+            ('Clear All', 7, 0, 5)  # Span all 5 columns for Clear All button. Reminds me of a spacebar on a keyboard.
         ]
 
-        for (text, row, col) in buttons:
-            # Adjust button styles based on text
-            if text in ['CE', 'AC']:
-                button = tk.Button(self.root, text=text, width=7, height=2, command=lambda t=text: self.button_click(t), bg='lightcoral', fg='white')
-            elif text.isdigit() or text == '.':
-                button = tk.Button(self.root, text=text, width=7, height=2, command=lambda t=text: self.button_click(t), bg='black', fg='white')
+
+#  43-48 to accomodate for buttons with a wider colspan (like my clear all)
+        for btn in buttons:
+            if len(btn) == 3:
+                text, row, col = btn
+                colspan = 1
             else:
-                button = tk.Button(self.root, text=text, width=7, height=2, command=lambda t=text: self.button_click(t), bg='dimgray', fg='white')
-            
-            button.grid(row=row, column=col, padx=5, pady=5)
+                text, row, col, colspan = btn
+
+            # Adjust button styles based on text Clear All added.
+            if text in ['CE', 'AC', 'Clear All']:
+                button = tk.Button(self.root, text=text, width=7*colspan, height=2, command=lambda t=text: self.button_click(t), bg='lightcoral', fg='white')
+            elif text.isdigit() or text == '.' or text == '00':
+                button = tk.Button(self.root, text=text, width=7*colspan, height=2, command=lambda t=text: self.button_click(t), bg='black', fg='white')
+            else:
+                button = tk.Button(self.root, text=text, width=7*colspan, height=2, command=lambda t=text: self.button_click(t), bg='dimgray', fg='white')
+
+            button.grid(row=row, column=col, columnspan=colspan, padx=5, pady=5)
             button.config(font=('Arial', 14), relief='raised', bd=5)
 
     def button_click(self, text):
@@ -67,13 +80,17 @@ class Calculator:
         elif text == 'MOD':
             self.add_operator('%')
         elif text == '-->':
-            self.handle_backspace()  # Trigger backspace action
+            self.handle_backspace()
         elif text == 'CE':
             self.clear_entry()
         elif text == 'AC':
             self.clear_all()
+        elif text == 'Clear All':
+            self.clear_all()
         else:
             self.entry.insert(tk.END, text)
+
+# Clear all on line 90.
 
     def calculate(self):
         try:
@@ -82,7 +99,7 @@ class Calculator:
             self.entry.delete(0, tk.END)
             self.entry.insert(0, result)
             self.add_to_history(f"{expression} = {result}\n")
-        except Exception as e:
+        except Exception:
             messagebox.showerror("Error", "Invalid Input")
 
     def single_operand_operation(self, op):
@@ -103,7 +120,7 @@ class Calculator:
             self.entry.delete(0, tk.END)
             self.entry.insert(0, result)
             self.add_to_history(f"{op}({num}) = {result}\n")
-        except Exception as e:
+        except Exception:
             messagebox.showerror("Error", "Invalid Input")
 
     def store_memory(self, operation):
@@ -113,7 +130,7 @@ class Calculator:
             elif operation == 'M-':
                 self.memory -= float(self.entry.get())
             messagebox.showinfo("Memory", f"Memory updated: {self.memory}")
-        except Exception as e:
+        except Exception:
             messagebox.showerror("Error", "Invalid Input")
 
     def recall_memory(self):
@@ -159,21 +176,12 @@ class Calculator:
     def key_press_event(self, event):
         key = event.char
 
-        # Check if the key is a digit or a valid operator
         if key.isdigit() or key == '.':
-            # Allow digits and decimal point to be inserted
             self.entry.insert(tk.END, key)
-        
-        # Handle valid operators
         elif key in ['+', '-', '*', '/', '%']:
             current_text = self.entry.get()
-
-            # Check if the current text is not empty and the last character is not an operator
             if current_text and current_text[-1] not in ['+', '-', '*', '/', '%']:
-                # Insert the operator
                 self.entry.insert(tk.END, key)
-        
-        # Handle Enter key for calculation
         elif key == '\r':
             self.calculate()
 
@@ -181,5 +189,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     calc = Calculator(root)
     root.mainloop()
-    
-    
